@@ -1,6 +1,7 @@
-# teste-vuejs
+# Projeto Teste Busca CEP
+Mini Projeto de Teste de Busca de CEP para Analise com Vue e Bootstrap-vue
 
-## Project setup
+## Instalação Manual
 ```
 yarn install
 ```
