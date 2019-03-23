@@ -10,6 +10,8 @@
               <label for="feedbackCep">Localize o CEP para Adicionar a Lista</label>
               <b-input
                 autofocus
+                :sort-by.sync="sortBy"
+                :sort-desc.sync="sortDesc"
                 type="text"
                 v-model="opcoes.cep"
                 maxlength="8"
@@ -70,6 +72,8 @@ export default {
     return {
       status: false,
       msg: "O CEP deve conter 8 Caracteres.",
+      sortBy: "cep",
+      sortDesc: false,
       opcoes: {
         item: {},
         index: 0,
@@ -98,32 +102,7 @@ export default {
           class: "text-center"
         }
       },
-      items: [
-        {
-          cep: "04104-010",
-          logradouro: "Rua Apeninos",
-          complemento: "lado ímpar",
-          bairro: "Centro",
-          localidade: "São Paulo",
-          uf: "SP"
-        },
-        {
-          cep: "04104-020",
-          logradouro: "Rua Apeninos",
-          complemento: "lado ímpar",
-          bairro: "Centro",
-          localidade: "São Paulo",
-          uf: "SP"
-        },
-        {
-          cep: "04104-030",
-          logradouro: "Rua Apeninos",
-          complemento: "lado ímpar",
-          bairro: "Centro",
-          localidade: "São Paulo",
-          uf: "SP"
-        }
-      ]
+      items: []
     };
   },
   methods: {
@@ -145,23 +124,56 @@ export default {
     },
 
     cepRemover(index) {
-      this.msg = "O CEP deve conter 8 Caracteres."
+      this.msg = "O CEP deve conter 8 Caracteres.";
       this.opcoes = {
         error: true,
         cep: "041040"
       };
       this.items.splice(index, 1);
-      
     },
 
     getCep() {
+      if (this.opcoes.cep.length == 8 && this.opcoes.edit == true) {
+        axios
+          .get("https://viacep.com.br/ws/" + this.opcoes.cep + "/json/")
+          .then(response => {
+            if (response.data.erro) {
+              this.msg =
+                "CEP Pesquisado: " + this.opcoes.cep + " não foi localizado";
+              this.opcoes.error = true;
+            } else {
+              this.msg =
+                "CEP Pesquisado: " +
+                this.opcoes.cep +
+                " foi localizado e adicionado a sua lista";
+              this.opcoes.item = {
+                cep: response.data.cep,
+                logradouro: response.data.logradouro,
+                complemento: response.complemento,
+                bairro: response.data.bairro,
+                localidade: response.data.localidade,
+                uf: response.data.uf
+              };
+
+              this.opcoes.error = false;
+              this.items.splice(this.opcoes.index, 1);
+              this.items.push(this.opcoes.item);
+              this.opcoes.edit = false;
+              this.opcoes.create = true;
+              lodash.orderBy(this.items, ['cep'], ['asc']);
+            }
+          })
+          .catch(erro => {
+            this.msg = "Error ao fazer requisição na API VIACEP";
+            this.opcoes.error = true;
+          });
+      }
+
       if (this.opcoes.cep.length == 8 && this.opcoes.create == true) {
         axios
           .get("https://viacep.com.br/ws/" + this.opcoes.cep + "/json/")
           .then(response => {
-            console.log(response);
             if (response.data.erro) {
-              console.log("vazioooooo");
               this.msg =
                 "CEP Pesquisado: " + this.opcoes.cep + " não foi localizado";
               this.opcoes.error = true;
@@ -181,6 +193,7 @@ export default {
               this.opcoes.error = false;
 
               this.items.push(this.opcoes.item);
+              lodash.orderBy(this.items, ['cep'], ['asc']);
             }
           })
           .catch(erro => {
